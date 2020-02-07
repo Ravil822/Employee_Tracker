@@ -89,11 +89,11 @@ function runApp() {
 
 function viewEmployees() {
     let query = "SELECT * FROM employee";
-    connection.query(query, "SELECT * FROM employee", function(err, res) {
+    connection.query(query, "SELECT * FROM employee", function (err, res) {
         console.log(res)
-        });
+    });
 
-        runApp();
+    runApp();
 };
 
 function viewByDepartment() {
@@ -107,8 +107,57 @@ function viewByManager() {
 };
 
 function addEmployee() {
+    inquirer.prompt([
+        {
+            name: "first_name",
+            type: "input",
+            message: "What is the employee's first name?"
+        },
+        {
+            name: "last_name",
+            type: "input",
+            message: "What is the employee's last name?"
+        },
+        {
+            name: "id",
+            type: "input",
+            message: "What is the employee's ID?"
+        },
+        {
+            type: "list",
+            name: "role",
+            message: "Please, select employee's role",
+            choices: [
+                "001",
+                "002",
+                "003",
+                "004",
+                "005"
+                // "001" (Production Manager),
+                // "Quality control manager",
+                // "Bookkeeper",
+                // 'Office manager',
+                // 'Research Scientist'
+            ]
+        }
+    ]).then(function (answer) {
+        connection.query(
+            "INSERT INTO employee SET ?",
+            {
+                first_name: answer.first_name,
+                last_name: answer.last_name,
+                id: answer.id,
+                role_id: answer.role
+            },
+            function (err) {
+                if (err) throw err;
+                console.log("A new employee added!");
+                runApp();
+            }
+        );
+    });
 
-    runApp();
+
 };
 
 function removeEmployee() {
