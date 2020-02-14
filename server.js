@@ -18,11 +18,20 @@ const connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
+    console.log("")
+    console.log("|+++++++++++++++++++++++++++++++++++++++++++++++++++++++|")
+    console.log("|+++++++++++++++++++++++++++++++++++++++++++++++++++++++|")
+    console.log("|                 ----------------------                |")
+    console.log("|+++++++++++++++++|| EMPLOYEE TRACKER ||++++++++++++++++|")
+    console.log("|                 ----------------------                |")
+    console.log("|+++++++++++++++++++++++++++++++++++++++++++++++++++++++|")
+    console.log("|+++++++++++++++++++++++++++++++++++++++++++++++++++++++|")
+    console.log("")
     runApp();
 });
 
 function runApp() {
-    console.log("<h1>Hi</h1>")
+
     inquirer
         .prompt({
             name: "action",
@@ -30,13 +39,13 @@ function runApp() {
             message: "What would you like to do?",
             choices: [
                 "View All Employees",
-                "View All Employees by Department",
-                "View All Employees by Manager",
+                "View Departments",
+                "View All Roles",
+                "View Employees by Manager",
                 "Add New Employee",
                 "Remove Employee",
                 "Update an Employees Role",
                 "Update an Employees Manager",
-                "View All Roles",
                 "Add Role",
                 "Exit"
             ]
@@ -47,11 +56,11 @@ function runApp() {
                     viewEmployees();
                     break;
 
-                case "View All Employees by Department":
-                    viewByDepartment();
+                case "View Departments":
+                    viewDepartments();
                     break;
 
-                case "View All Employees by Manager":
+                case "View Employees by Manager":
                     viewByManager();
                     break;
 
@@ -88,34 +97,123 @@ function runApp() {
 
 
 function viewEmployees() {
-    let employees = [];
     connection.query(`SELECT e.first_name, e.last_name, er.title, er.salary, ifnull(concat(mgr.first_name," ", mgr.last_name), "") as manager, department_name
     FROM employee e
     JOIN emp_role er on e.role_id = er.id
     JOIN department d on er.department_id = d.id
     LEFT JOIN employee mgr on mgr.id = e.manager_id`, function (err, res) {
         if (err) throw err;
-         console.table(res)             
-    }).while(res => {
-        console.log (res)
-    });
-    
+        console.table(res);
+        runApp();
+    })
 };
 
-function viewByDepartment() {
-
-    runApp();
-};
+function viewDepartments() {
+    connection.query(`SELECT d.id, d.department_name, er.title, er.salary
+    FROM department d
+    JOIN emp_role er on d.id = er.department_id`, function (err, res) {
+        if (err) throw err;
+        console.table(res);
+        runApp();
+    })
+}
 
 function viewByManager() {
+    connection.query("SELECT * FROM employee WHERE manager_id is NULL", function (err, manager) {
+        if (err) throw err;
+        var managerArray = [];
+        for (var i = 0; i < manager.length; i++) {
 
-    runApp();
+            managerArray.push(`${manager[i].id}`);
+        }
+        inquirer
+            .prompt(
+
+                {
+                    name: "manager",
+                    type: "list",
+                    message: "Who is the employee's manager ? ",
+                    choices: managerArray
+                }
+            )
+            .then(function (answer) {
+                connection.query(`SELECT e.id, e.first_name, e.last_name, er.title, er.salary
+                FROM employee e
+                JOIN emp_role er on e.role_id = er.id
+                WHERE ?`,
+                { manager_id: answer.manager },
+                    function (err, res) {
+                        if (err) throw err;
+                        console.table(res);
+                        runApp()
+                    });
+            });
+    });
 };
 
+
+
+
 function addEmployee() {
+    connection.query("SELECT * FROM emp_role", function (err, results) {
+        if (err) throw err;
+        connection.query("SELECT * FROM employee WHERE manager_id is NULL", function (err, manager) {
+            if (err) throw err;
+            var managerArray = [];
+            var choiceArray = [];
+            for (var i = 0; i < manager.length; i++) {
 
+                managerArray.push(`${manager[i].id}`);
+            }
 
+            for (var i = 0; i < results.length; i++) {
+                choiceArray.push(`${results[i].title}`);
+            }
 
+            inquirer
+                .prompt([
+                    {
+                        type: "input",
+                        name: "first_name",
+                        message: "Please enter first name of new employee"
+                    },
+                    {
+                        type: "input",
+                        name: "last_name",
+                        message: "Please enter last name of new employee"
+
+                    },
+                    {
+                        name: "role",
+                        type: "list",
+                        message: "What is the employee's role ?",
+                        choices: choiceArray
+                    },
+                    {
+                        name: "manager",
+                        type: "list",
+                        message: "Who is the employee's manager ? ",
+                        choices: managerArray
+                    }
+                ])
+                .then(function (answer) {
+                    connection.query(
+                        "INSERT INTO employee SET ?",
+                        {
+                            first_name: answer.first_name,
+                            last_name: answer.last_name,
+                            role_id: emp_role.filter(role => emp_role.name === res.emp_role)[0].id,
+                            manager_id: answer.manager
+                        },
+                        function (err) {
+                            if (err) throw err;
+                            console.log("New employee was created successfully!");
+                            runApp()
+                        }
+                    );
+                });
+        });
+    });
 };
 
 function removeEmployee() {
@@ -131,7 +229,13 @@ function updateRole() {
 
 function viewRoles() {
 
-    runApp();
+    connection.query(`SELECT title, salary, department_name
+    FROM emp_role er
+    JOIN department d on er.department_id = d.id`, function (err, res) {
+        if (err) throw err;
+        console.table(res);
+        runApp();
+    })
 };
 
 function updateRole() {
