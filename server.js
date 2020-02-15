@@ -159,16 +159,6 @@ function addEmployee() {
             if (err) throw err;
             var managerArray = managers.map(manager => ({ name: `${manager.first_name} ${manager.last_name}`, value: manager.id }));
             var choiceArray = roles.map(role => ({ name: role.title, value: role.id }))
-            // for (var i = 0; i < manager.length; i++) {
-
-            //     managerArray.push(`${manager[i].id}`);
-            // }
-
-
-            // for (var i = 0; i < results.length; i++) {
-            //     choiceArray.push(`${results[i].title}`);
-            // }
-
             inquirer
                 .prompt([
                     {
@@ -194,8 +184,7 @@ function addEmployee() {
                         message: "Who is the employee's manager ? ",
                         choices: managerArray
                     }
-                ])
-                .then(function (answer) {
+                ]).then(function (answer) {
                     connection.query(
                         "INSERT INTO employee SET ?",
                         {
@@ -246,13 +235,12 @@ function updateRole() {
                     }
                 ]).then(function (answer) {
                     connection.query(
-                        "UPDATE employee SET ? WHERE?", [{ role_id: answer.role }, {id: answer.employee}], 
+                        "UPDATE employee SET ? WHERE?", [{ role_id: answer.role }, { id: answer.employee }],
                         function (err) {
                             if (err) throw err;
                             console.log("The Employee's role was updated successfully!");
                             runApp()
-                        }
-                    );
+                        });
                 });
         })
     })
@@ -271,6 +259,50 @@ function viewRoles() {
 
 
 function addRole() {
+    connection.query(`SELECT * FROM emp_role`, function (err, res) {
+        if (err) throw err;
+        connection.query("SELECT * FROM department", function (err, departments) {
+            if (err) throw err;
+            var departmentArray = departments.map(department => ({ name: department.department_name, value: department.id }))
+            inquirer
+                .prompt([
 
-    runApp();
+                    {
+                        type: "input",
+                        name: "new_title",
+                        message: "What role do you want to add?"
+
+                    },
+                    {
+                        type: "input",
+                        name: "new_salary",
+                        message: "What salary for the new role?"
+                    },
+
+                    {
+                        name: "department_id",
+                        type: "list",
+                        message: "What department do you want to assign to the new role?",
+                        choices: departmentArray
+                    }
+
+
+                ]).then(function (answer) {
+                    connection.query(
+                        "INSERT INTO emp_role SET ?",
+                        {
+                            title: answer.new_title,
+                            salary: answer.new_salary,
+                            department_id: answer.department_id
+                        },
+                        function (err) {
+                            if (err) throw err;
+                            console.log("The new Employee's role was added successfully!");
+                            runApp()
+                        }
+                    );
+                });
+        });
+
+    });
 };
