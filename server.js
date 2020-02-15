@@ -1,6 +1,5 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-// require("console.table");
 
 const connection = mysql.createConnection({
     host: "localhost",
@@ -32,7 +31,6 @@ connection.connect(function (err) {
 });
 
 function runApp() {
-
     inquirer
         .prompt({
             name: "action",
@@ -44,10 +42,9 @@ function runApp() {
                 "View All Roles",
                 "View Employees by Manager",
                 "Add New Employee",
-                "Remove Employee",
-                "Update an Employees Role",
-                "Update an Employees Manager",
+                "Add department",
                 "Add Role",
+                "Update an Employees Role",
                 "Exit"
             ]
         })
@@ -69,8 +66,8 @@ function runApp() {
                     addEmployee();
                     break;
 
-                case "Remove Employee":
-                    removeEmployee();
+                case "Add department":
+                    addDepartments();
                     break;
 
                 case "Update an Employees Role":
@@ -96,7 +93,6 @@ function runApp() {
         });
 }
 
-
 function viewEmployees() {
     connection.query(`SELECT e.first_name, e.last_name, er.title, er.salary, ifnull(concat(mgr.first_name," ", mgr.last_name), "") as manager, department_name
     FROM employee e
@@ -106,8 +102,8 @@ function viewEmployees() {
         if (err) throw err;
         console.table(res);
         runApp();
-    })
-};
+    });
+}
 
 function viewDepartments() {
     connection.query(`SELECT d.department_name, er.title, er.salary
@@ -116,7 +112,7 @@ function viewDepartments() {
         if (err) throw err;
         console.table(res);
         runApp();
-    })
+    });
 }
 
 function viewByManager() {
@@ -148,9 +144,6 @@ function viewByManager() {
             });
     });
 };
-
-
-
 
 function addEmployee() {
     connection.query("SELECT * FROM emp_role", function (err, roles) {
@@ -204,10 +197,35 @@ function addEmployee() {
     });
 };
 
-function removeEmployee() {
+function addDepartments() {
 
+        inquirer
+            .prompt(
 
-    runApp();
+                {
+                    type: "input",
+                    name: "new_department",
+                    message: "What department do you want to add?"
+                }
+
+                ).then(function (answer) {
+                connection.query(
+                    "INSERT INTO department SET?",
+                     { 
+                         department_name: answer.new_department,
+                     },
+                    function (err) {
+                        if (err) throw err;
+                        console.log("New department was added successfully!");
+                        connection.query(`SELECT * FROM department`, function (err, res) {
+                            if (err) throw err;
+                            console.table(res);
+                            runApp();
+                        })
+                    }
+                );
+            });
+  
 };
 
 function updateRole() {
